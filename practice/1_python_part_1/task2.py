@@ -13,4 +13,18 @@ from typing import Dict
 
 
 def set_to_dict(dict_to_update: Dict[str, int], **items_to_set) -> Dict:
-    ...
+
+    for key, value in items_to_set.items():
+        curr_value = dict_to_update.get(key)
+        if curr_value is None or curr_value < value:
+            dict_to_update[key] = value
+
+    return dict_to_update
+
+
+def test_set_to_dict():
+    assert set_to_dict({'a': 1, 'b': 2, 'c': 3}, a=0, b=4) == {'a': 1, 'b': 4, 'c': 3}
+    assert set_to_dict({}, a=0) == {'a': 0}
+    assert set_to_dict({'a': 5}) == {'a': 5}
+
+test_set_to_dict()
