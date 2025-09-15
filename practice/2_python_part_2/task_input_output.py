@@ -18,6 +18,17 @@ Examples:
 
 
 def read_numbers(n: int) -> str:
-    ...
+    numbers = []
 
+    for i in range(n):
+        value = input()
+        try:
+            numbers.append(float(value))
+        except ValueError:
+            continue
 
+    if numbers:
+        avg = round(sum(numbers) / len(numbers), 2)
+        return f"Avg: {avg:.2f}"
+    else:
+        return "No numbers entered"
