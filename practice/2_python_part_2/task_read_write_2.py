@@ -30,5 +30,3 @@ def write_words_to_files():
 
     with open("file2.txt", "w", encoding="cp1252") as f2:
         f2.write(",".join(reversed(words)))
-
-write_words_to_files()

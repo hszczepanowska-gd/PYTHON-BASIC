@@ -16,8 +16,7 @@ Example:
 
 import os
 
-def process_all_files_into_one():
-    path = "./files"
+def process_all_files_into_one(path):
     files = os.listdir(path)
     files.sort(key=lambda f: int(f.split('.')[0].split('_')[1]))
 
@@ -28,5 +27,3 @@ def process_all_files_into_one():
 
     with open("result.txt", 'w', encoding='utf-8') as out:
         out.write(", ".join(values))
-
-process_all_files_into_one()
