@@ -12,9 +12,17 @@ If entered date is from future, return negative value for number of days
 """
 from datetime import datetime
 
+class WrongFormatException(Exception):
+    pass
 
 def calculate_days(from_date: str) -> int:
-    ...
+    try:
+        given_date = datetime.strptime(from_date, "%Y-%m-%d").date()
+    except ValueError:
+        raise WrongFormatException("Date must be in YYYY-MM-DD format")
+    
+    present_date = datetime.now().date()
+    return (present_date - given_date).days
 
 
 """
