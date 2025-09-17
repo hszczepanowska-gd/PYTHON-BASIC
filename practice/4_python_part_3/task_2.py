@@ -11,9 +11,16 @@ Examples:
 """
 import math
 
+class OperationNotFoundException(Exception):
+    pass
 
 def math_calculate(function: str, *args):
-    ...
+    try:
+        operation = getattr(math, function)
+    except AttributeError:
+        raise OperationNotFoundException(f"Operation '{function}' not found in math module")
+
+    return operation(*args)
 
 
 """

@@ -15,11 +15,41 @@ Example:
 """
 
 import argparse
+from faker import Faker
 
+def parse_arguments(argv=None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate fake data using Faker")
+    parser.add_argument("NUMBER", type=int, help="How many fake records to generate.")
+    ns, rest = parser.parse_known_args(argv)
+
+    fields = {}
+    for field in rest:
+        if field.startswith("--") and "=" in field:
+            key, value = field[2:].split("=", 1)
+            key, value = key.strip(), value.strip()
+            if key and value:
+                fields[key] = value
+
+    ns.fields = fields
+    return ns
 
 def print_name_address(args: argparse.Namespace) -> None:
-    ...
+    fake = Faker()
+    for _ in range(args.NUMBER):
+        row = {}
+        for field, provider in args.fields.items():
+            data = getattr(fake, provider)()
+            row[field] = data
 
+        print(row)
+
+def main(argv=None):
+    args = parse_arguments(argv)
+    print_name_address(args)
+
+
+if __name__ == "__main__":
+    main()
 
 """
 Write test for print_name_address function

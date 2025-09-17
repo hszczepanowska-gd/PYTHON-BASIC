@@ -6,11 +6,18 @@ Examples:
      200, 'response data'
 """
 from typing import Tuple
-
+from urllib.request import urlopen
+from urllib import error
 
 def make_request(url: str) -> Tuple[int, str]:
-    ...
-
+    try:
+        with urlopen(url) as response:
+            return response.code, response.read().decode('utf-8', errors="replace")
+    except error.HTTPError as e:
+        return e.code, e.read().decode('utf-8', errors="replace")
+    except error.URLError as e:
+        return 0, str(getattr(e, "reason", e))
+       
 
 """
 Write test for make_request function
