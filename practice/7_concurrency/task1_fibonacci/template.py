@@ -1,6 +1,10 @@
 import os
 from random import randint
-
+import sys
+import time
+from concurrent.futures import ProcessPoolExecutor
+import csv
+sys.set_int_max_str_digits(0)
 
 OUTPUT_DIR = './output'
 RESULT_FILE = './output/result.csv'
@@ -16,11 +20,26 @@ def fib(n: int):
 
 
 def func1(array: list):
-    pass
+    with ProcessPoolExecutor() as executor:
+        results = list(executor.map(fib, array))
+
+    for n, val in zip(array, results):
+        with open(os.path.join(OUTPUT_DIR, f'{n}.txt'), 'w', encoding='utf-8') as f:
+            f.write(str(val))
 
 
 def func2(result_file: str):
-    pass
+    files = [f for f in os.listdir(OUTPUT_DIR) if f.endswith('.txt')]
+    data = []
+    for filename in files:
+        n = int(filename.split('.')[0])
+        with open(os.path.join(OUTPUT_DIR, filename), 'r', encoding='utf-8') as f:
+            val = f.read().strip()
+        data.append((n, val))
+
+    with open(result_file, 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerows(data)
 
 
 if __name__ == '__main__':
