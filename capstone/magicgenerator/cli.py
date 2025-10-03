@@ -4,54 +4,14 @@ import json
 import logging
 import sys
 from pathlib import Path
+from generation_service import GenerationService
+from record_generator import SchemaError
+from config_manager import ConfigManager
 
 class AppCLI:
     def __init__(self) -> None:
         self.logger = logging.getLogger("magicgenerator")
-
-    def parse_args(self) -> argparse.Namespace:
-        parser = argparse.ArgumentParser(
-            prog="magicgenerator",
-            description="Generate JSON test data from a simple schema.",
-        )
-
-        parser.add_argument(
-            "--path_to_save_files",
-            help="Path to the directory where output files will be saved.",
-        )
-
-        parser.add_argument(
-            "--file_name",
-            default="data",
-            help="Base name for the output file (without extension). Default: %(default)s",
-        )
-
-        parser.add_argument(
-            "--data_schema",
-            required=True,
-            help=(
-                "JSON schema as a string or path to a .json file defining the data structure."
-                "Example string: "
-                r"'{\"date\":\"timestamp:\",\"name\":\"str:rand\",\"age\":\"int:rand(1,90)\"}'"
-            ),
-        )
-
-        parser.add_argument(
-            "--data_lines",
-            type=int,
-            default=1000,
-            help="Number of records to generate. Default: %(default)s",
-        )
-
-        parser.add_argument(
-            "--log-level",
-            choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-            default="INFO",
-            help="Logging level. Default: %(default)s",
-        )
-
-
-        return parser.parse_args()
+        self.config_manager = ConfigManager()
 
     def configure_logging(self, level: str) -> None:
         logging.basicConfig(
@@ -93,50 +53,39 @@ class AppCLI:
             sys.exit(1)
 
     def run(self) -> None:
-        args = self.parse_args()
-        self.configure_logging(args.log_level)
+        cfg = self.config_manager.parse()
+        self.configure_logging(cfg.log_level)
 
         self.logger.info("Start magicgenerator")
-        self.logger.debug("Arguments: %s", vars(args))
+        self.logger.debug("Arguments: %s", vars(cfg))
 
-        out_dir = self._resolve_output_dir(args.path_to_save_files)
+        out_dir = self._resolve_output_dir(cfg.path_to_save_files)
 
-        raw_schema = self._load_schema(args.data_schema)
+        raw_schema = self._load_schema(cfg.data_schema)
         self.logger.info("Loaded schema (keys: %s)", ", ".join(raw_schema.keys()))
 
 
-        out_path = out_dir / f"{args.file_name}.jsonl"
+        out_path = out_dir / f"{cfg.file_name}.jsonl"
         self.logger.info("Output file: %s", out_path)
-
+        service = GenerationService(self.logger)
         try:
-            self._generate_one_file_placeholder(
+            service.generate_to_file(
                 schema=raw_schema,
                 out_path=out_path,
-                lines=args.data_lines,
+                lines=cfg.data_lines,
             )
+        except SchemaError as e:
+            self.logger.error("Schema error: %s", e)
+            sys.exit(1)
         except Exception as e:
             self.logger.error("Unexpected error during generation: %s", e)
             sys.exit(1)
 
         self.logger.info("Finished generation")
 
-    def _generate_one_file_placeholder(self, schema: dict, out_path: Path, lines: int) -> None:
-        self.logger.warning(
-            "PLACEHOLDER GENERATION ACTIVATED: will write %d empty records to %s",
-            lines, out_path
-        )
-        try:
-            with out_path.open("w", encoding="utf-8") as f:
-                for _ in range(lines):
-                    f.write("{}\n")
-        except OSError as e:
-            self.logger.error("Failed to write file '%s': %s", out_path, e)
-            sys.exit(1)
-
 
 def main() -> None:
     AppCLI().run()
-
 
 if __name__ == "__main__":
     main()
