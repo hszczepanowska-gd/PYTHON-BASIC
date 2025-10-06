@@ -1,9 +1,10 @@
 from __future__ import annotations
-import argparse
 import json
 import logging
+import os
 import sys
 from pathlib import Path
+import time
 from generation_service import GenerationService
 from record_generator import SchemaError
 from config_manager import ConfigManager
@@ -55,7 +56,7 @@ class AppCLI:
     def run(self) -> None:
         cfg = self.config_manager.parse()
         self.configure_logging(cfg.log_level)
-
+        start_time = time.time()
         self.logger.info("Start magicgenerator")
         self.logger.debug("Arguments: %s", vars(cfg))
 
@@ -75,20 +76,45 @@ class AppCLI:
                 deleted_count = service.clear_path(out_dir, cfg.file_name)
                 self.logger.info("Cleared %d existing file(s) matching base name '%s'", deleted_count, cfg.file_name)
 
-            if cfg.files_count == 1:
-                out_path = out_dir / f"{cfg.file_name}.jsonl"
-                self.logger.info("Output file: %s", out_path)
-                service.generate_to_file(raw_schema, out_path, cfg.data_lines)
+            if cfg.files_count == 1 or cfg.multiprocessing == 1:
+
+                if cfg.files_count == 1:
+                    out_path = out_dir / f"{cfg.file_name}.jsonl"
+                    self.logger.info("Output file: %s", out_path)
+                    service.generate_to_file(raw_schema, out_path, cfg.data_lines)
+                else:
+                    self.logger.info("Output dir (multi): %s", out_dir)
+                    service.generate_many_files(
+                        schema=raw_schema,
+                        out_dir=out_dir,
+                        base_name=cfg.file_name,
+                        lines_per_file=cfg.data_lines,
+                        files_count=cfg.files_count,
+                        prefix_mode=cfg.file_prefix,
+                    )
             else:
-                self.logger.info("Output dir (multi): %s", out_dir)
-                service.generate_many_files(
+                cpu = os.cpu_count() or 1
+                proc = cfg.multiprocessing
+                if proc < 0:
+                    self.logger.error("--multiprocessing must be >= 0")
+                    sys.exit(1)
+                if proc == 0:
+                    self.logger.warning("--multiprocessing=0 is not useful. Using 1.")
+                    proc = 1
+                if proc > cpu:
+                    self.logger.warning("--multiprocessing=%d > os.cpu_count()=%d. Using %d.", proc, cpu, cpu)
+                    proc = cpu
+
+                service.generate_many_files_parallel(
                     schema=raw_schema,
                     out_dir=out_dir,
                     base_name=cfg.file_name,
                     lines_per_file=cfg.data_lines,
                     files_count=cfg.files_count,
                     prefix_mode=cfg.file_prefix,
+                    process_count=proc,
                 )
+                    
         except SchemaError as e:
             self.logger.error("Schema error: %s", e)
             sys.exit(1)
@@ -96,7 +122,9 @@ class AppCLI:
             self.logger.error("Unexpected error during generation: %s", e)
             sys.exit(1)
 
-        self.logger.info("Finished generation")
+        end_time = time.time()
+        elapsed = end_time - start_time
+        self.logger.info("Elapsed time: %.2f seconds", elapsed)
 
 
 def main() -> None:
