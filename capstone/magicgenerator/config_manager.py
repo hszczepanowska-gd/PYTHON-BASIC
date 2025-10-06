@@ -11,7 +11,8 @@ class ParsedConfig:
     data_lines: int
     log_level: str
     files_count: int    
-    file_prefix: str 
+    file_prefix: str
+    clear_path: bool
 
 
 class ConfigManager:
@@ -62,6 +63,11 @@ class ConfigManager:
             default="count",
             help="Prefix strategy when generating more than 1 file: count | random | uuid. Default: %(default)s",
         )
+        parser.add_argument(
+            "--clear_path", 
+            action="store_true",
+            help="If set, delete existing files matching file_name before generation."
+        )
         return parser
 
     def parse(self) -> ParsedConfig:
@@ -75,4 +81,5 @@ class ConfigManager:
             log_level=args.log_level,
             files_count=args.files_count,
             file_prefix=args.file_prefix,
+            clear_path=args.clear_path,
         )

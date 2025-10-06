@@ -69,13 +69,17 @@ class AppCLI:
         self.logger.info("Output file: %s", out_path)
         service = GenerationService(self.logger)
         try:
+
+            out_dir = self._resolve_output_dir(cfg.path_to_save_files)
+            if cfg.clear_path:
+                deleted_count = service.clear_path(out_dir, cfg.file_name)
+                self.logger.info("Cleared %d existing file(s) matching base name '%s'", deleted_count, cfg.file_name)
+
             if cfg.files_count == 1:
-                out_dir = self._resolve_output_dir(cfg.path_to_save_files)
                 out_path = out_dir / f"{cfg.file_name}.jsonl"
                 self.logger.info("Output file: %s", out_path)
                 service.generate_to_file(raw_schema, out_path, cfg.data_lines)
             else:
-                out_dir = self._resolve_output_dir(cfg.path_to_save_files)
                 self.logger.info("Output dir (multi): %s", out_dir)
                 service.generate_many_files(
                     schema=raw_schema,

@@ -57,3 +57,23 @@ class GenerationService:
         if mode == "uuid":
             return str(uuid.uuid4())
         return f"{idx + 1:03d}"
+    
+    def clear_path(self, out_dir: Path, base_name: str) -> int:
+        patterns = [f"{base_name}.jsonl", f"{base_name}_*.jsonl"]
+        to_delete = set()
+        for pat in patterns:
+            to_delete.update(out_dir.glob(pat))
+
+        if not to_delete:
+            return 0
+
+        deleted = 0
+        for p in to_delete:
+            try:
+                p.unlink()
+                deleted += 1
+                self.log.debug("clear_path: deleted %s", p)
+            except OSError as e:
+                raise OSError(f"Failed to delete '{p}': {e}") from e
+
+        return deleted
