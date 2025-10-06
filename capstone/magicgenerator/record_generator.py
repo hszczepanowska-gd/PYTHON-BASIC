@@ -18,9 +18,6 @@ class RecordGenerator:
         self.schema = schema
         self.log = log
 
-    def generate_one(self) -> dict:
-        return self.generate_row_from_schema()
-
     def generate_row_from_schema(self) -> dict:
         out = {}
 

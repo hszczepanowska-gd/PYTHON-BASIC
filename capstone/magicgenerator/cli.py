@@ -16,7 +16,7 @@ class AppCLI:
     def configure_logging(self, level: str) -> None:
         logging.basicConfig(
             level=getattr(logging, level),
-            format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+            format="%(asctime)s | %(levelname)s | %(message)s",
         )
         self.logger.setLevel(getattr(logging, level))
 
@@ -69,11 +69,22 @@ class AppCLI:
         self.logger.info("Output file: %s", out_path)
         service = GenerationService(self.logger)
         try:
-            service.generate_to_file(
-                schema=raw_schema,
-                out_path=out_path,
-                lines=cfg.data_lines,
-            )
+            if cfg.files_count == 1:
+                out_dir = self._resolve_output_dir(cfg.path_to_save_files)
+                out_path = out_dir / f"{cfg.file_name}.jsonl"
+                self.logger.info("Output file: %s", out_path)
+                service.generate_to_file(raw_schema, out_path, cfg.data_lines)
+            else:
+                out_dir = self._resolve_output_dir(cfg.path_to_save_files)
+                self.logger.info("Output dir (multi): %s", out_dir)
+                service.generate_many_files(
+                    schema=raw_schema,
+                    out_dir=out_dir,
+                    base_name=cfg.file_name,
+                    lines_per_file=cfg.data_lines,
+                    files_count=cfg.files_count,
+                    prefix_mode=cfg.file_prefix,
+                )
         except SchemaError as e:
             self.logger.error("Schema error: %s", e)
             sys.exit(1)

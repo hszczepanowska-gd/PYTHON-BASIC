@@ -10,6 +10,8 @@ class ParsedConfig:
     data_schema: str
     data_lines: int
     log_level: str
+    files_count: int    
+    file_prefix: str 
 
 
 class ConfigManager:
@@ -48,6 +50,18 @@ class ConfigManager:
             default="INFO",
             help="Logging level. Default: %(default)s",
         )
+        parser.add_argument(
+            "--files_count",
+            type=int,
+            default=1,
+            help="How many files to generate. 0 = print to stdout instead of files. Default: %(default)s",
+        )
+        parser.add_argument(
+            "--file_prefix",
+            choices=["count", "random", "uuid"],
+            default="count",
+            help="Prefix strategy when generating more than 1 file: count | random | uuid. Default: %(default)s",
+        )
         return parser
 
     def parse(self) -> ParsedConfig:
@@ -59,4 +73,6 @@ class ConfigManager:
             data_schema=args.data_schema,
             data_lines=args.data_lines,
             log_level=args.log_level,
+            files_count=args.files_count,
+            file_prefix=args.file_prefix,
         )
