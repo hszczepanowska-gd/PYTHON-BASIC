@@ -1,5 +1,3 @@
-from __future__ import annotations
-import json
 import logging
 from multiprocessing.pool import Pool
 import random
